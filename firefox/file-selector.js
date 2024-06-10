@@ -99,9 +99,9 @@ async function saveTabsAdvanced() {
     try {
         const filenameInput = document.getElementById('filename-input');
         const prefixOption = document.querySelector('input[name="prefix-option"]:checked').value;
-        
+        const windowOption = document.querySelector('input[name="window-option"]:checked').value;
         // Send a message to the background script with filename and prefixOption
-        await browser.runtime.sendMessage({ command: 'saveUrlsAdvanced', filename: filenameInput.value, prefixOption });
+        await browser.runtime.sendMessage({ command: 'saveUrlsAdvanced', filename: filenameInput.value, prefixOption: prefixOption, windowOption: windowOption});
     } catch (error) {
         console.error('Error saving URLs:', error);
         alert('Failed to save URLs:\n' + error.message);
