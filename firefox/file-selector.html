@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Selector</title>
+    <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+<body>
+    <h1>File Selector</h1>
+
+    <div id = "div_load_json" class="main_div">
+        <!-- This div holds teh loading mechanism for loading JSON files -->
+        <h2>Load JSON file to tabs</h2>
+        <input type="file" id="file-input">
+        <script src="file-selector.js"></script>
+    </div>
+
+    <div id = "div_all_save_to_json" class="main_div">
+        <!-- This div holds all the elements related to saving tabs to JSON -->
+        <h2>Save tabs to JSON file</h2>
+        <div id = "div_simple_save_to_json"  class="second_div">
+            <!-- This div is related to simple saving -->
+            <h3>Simple</h3>
+            <button id="save-tabs-simple">Save URLs simple</button>
+            <p class="subtext">This will save all tab-urls as with prefix and standard filename. This is the same option as presented directly in the extension.</p>
+            <script src="file-selector.js"></script>
+        </div>
+        
+        <div class="second_div">
+            <!-- This div is related to advanced saving -->
+            <h3>Advanced</h3>
+
+            <div id = "div_radiobuttons">
+                <!-- This div holds the radiobuttons and elements related to those -->
+                <label>
+                    <input type="radio" name="prefix-option" value="with-prefix" checked>
+                    With Prefix
+                </label>
+                <label>
+                    <input type="radio" name="prefix-option" value="without-prefix">
+                    Without Prefix
+                </label>
+                <p class = "subtext">Selecting prefix will add datetime stamp of format "yymmdd_HHmm" in front of the filename.</p>
+            </div>
+
+            <div id = "div_filename_input">
+                <!-- This div holds the input field that allows the user to specify a filename for the JSON file -->
+                <label for="filename-input">Filename:</label>
+                <input type="text" id="filename-input" name="filename">
+                <p class = "subtext">Specify filename. The appropriate filename will be attached automatically.</p>
+            </div>
+
+            <div id = "div_save_advanced_button">
+                <!-- This div will apply the settings specified for advanced saving -->
+                <button id="save-tabsAdvanced">Save URLs (Advanced)</button>
+            </div>
+
+        </div>
+    </div>
+</body>
+</html>

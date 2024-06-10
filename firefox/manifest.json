@@ -1,0 +1,31 @@
+{
+    "manifest_version": 2,
+    "name": "Save Tabs to JSON",
+    "version": "5.0",
+    "permissions": [
+        "tabs",
+        "downloads"
+    ],
+    "background": {
+        "scripts": ["background.js", "file-selector.js"]
+    },
+    "browser_action": {
+        "default_popup": "popup.html",
+        "default_icon": {
+            "48": "icons/icon48.png"
+        }
+    },
+    "icons": {
+        "48" : "icons/icon48",
+        "128": "icons/icon128.png"
+    },
+    "web_accessible_resources": [
+        "file-selector.html",
+        "file-selector.js"
+    ],
+    "applications": {
+        "gecko": {
+            "id": "save-tabs@img.com"
+        }
+    }
+}

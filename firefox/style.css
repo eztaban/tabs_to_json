@@ -1,0 +1,52 @@
+.subtext {
+    font-size: small;
+    color: grey;
+}
+
+.main_div {
+    background-color: #f0f0f0; /* Example background color (light grey) */
+    padding: 1% 0; /* 10 pixels of padding on the top and bottom */
+    margin-bottom: 0.5%; /* Add some margin at the bottom to create space between divs */
+}
+
+.second_div {
+    background-color: #dbdbdb;
+    padding: 0.5% 0;
+    margin-bottom: 0.5%;
+}
+
+#div_filename_input {
+    padding: 0.25% 0;
+    margin-bottom: 0.25%;
+}
+
+.extension_popup_body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px;
+}
+
+.left-column {
+    flex: 1;
+    margin-right: 20px;
+}
+
+.right-column {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.icon {
+    width: 80%; /* Adjust the size as needed */
+    height: 80%; /* Adjust the size as needed */
+}
+
+
+* {
+    margin-left: 0.5%;
+}
