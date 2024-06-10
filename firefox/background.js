@@ -13,6 +13,7 @@ function getTimestamp() {
 
 
 browser.runtime.onMessage.addListener(async (message) => {
+    
     // Listens for message and checks the content of the message to see what to do
     if (message.command === 'saveUrls') {
         // Simple save URLs
@@ -34,20 +35,37 @@ browser.runtime.onMessage.addListener(async (message) => {
     }
     if (message.command === 'saveUrlsAdvanced') {
         // With advanced, we utilize the content of the message
-        const allTabs = await browser.tabs.query({});
-        const urls = allTabs.map(tab => tab.url);
+
+        // Get the filename and prefixOption from the message
+        const { filename, prefixOption, windowOption} = message;
+
+        
+        let urls = [];
+
+        // save from all windows
+        if (windowOption === "all-windows") {
+            const allTabs = await browser.tabs.query({});
+            urls = allTabs.map(tab => tab.url);
+        } else {
+            // only retrieve tabs from current window
+            const currentWindow = await browser.windows.getCurrent();
+            const currentTabs = await browser.tabs.query({ windowId: currentWindow.id });
+            urls = currentTabs.map(tab => tab.url);
+        }
+        
+        // Filter out URLs containing specific strings
+        urls = urls.filter(url => !url.includes('file-selector.html') && !url.includes('moz-extension'));
 
         // Create a JSON object with the URLs
         const jsonContent = JSON.stringify({ urls }, null, 2);
 
-        // Get the filename and prefixOption from the message
-        const { filename, prefixOption } = message;
+        
 
         // Construct the filename based on the prefixOption and user input as well as file ending
         let finalFilename = `${filename}.json`;
         if (prefixOption === 'with-prefix') {
             const timestamp = getTimestamp();
-            finalFilename = `${timestamp}_${filename}`;
+            finalFilename = `${timestamp}_${filename}.json`;
         }
 
         // Prompt the user to download the JSON file
