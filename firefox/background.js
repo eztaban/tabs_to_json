@@ -13,12 +13,16 @@ function getTimestamp() {
 
 
 browser.runtime.onMessage.addListener(async (message) => {
+    const standard_filename = "_save-tabs"
     
     // Listens for message and checks the content of the message to see what to do
     if (message.command === 'saveUrls') {
         // Simple save URLs
-        const allTabs = await browser.tabs.query({});
-        const urls = allTabs.map(tab => tab.url);
+        const currentWindow = await browser.windows.getCurrent();
+        const currentTabs = await browser.tabs.query({ windowId: currentWindow.id });
+        urls = currentTabs.map(tab => tab.url);
+
+        urls = urls.filter(url => !url.includes('file-selector.html') && !url.includes('moz-extension'));
 
         // Create a JSON object with the URLs
         const jsonContent = JSON.stringify({ urls }, null, 2);
@@ -28,7 +32,7 @@ browser.runtime.onMessage.addListener(async (message) => {
         const url = URL.createObjectURL(blob);
         const timestamp = getTimestamp();
         alert(timestamp)
-        browser.downloads.download({ url, filename: `${timestamp}_save-tabs.json`});
+        browser.downloads.download({ url, filename: `${timestamp}${standard_filename}.json`});
         alert("u")
 
         console.log('All URLs saved:', urls);
@@ -37,7 +41,7 @@ browser.runtime.onMessage.addListener(async (message) => {
         // With advanced, we utilize the content of the message
 
         // Get the filename and prefixOption from the message
-        const { filename, prefixOption, windowOption} = message;
+        let { filename, prefixOption, windowOption} = message;
 
         
         let urls = [];
@@ -60,6 +64,17 @@ browser.runtime.onMessage.addListener(async (message) => {
         const jsonContent = JSON.stringify({ urls }, null, 2);
 
         
+
+        // Handle no filename entered
+        filename = filename.trim(); // Remove whitespace from both sides of the string
+        if (filename === '') {
+            // The input field is empty
+            filename = standard_filename;
+            console.log('No filename entered. Using standard filename');
+        } else {
+            // The input field has some value
+            console.log('Filename entered:', filename);
+        }
 
         // Construct the filename based on the prefixOption and user input as well as file ending
         let finalFilename = `${filename}.json`;
