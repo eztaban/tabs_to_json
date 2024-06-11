@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Save Tabs URLs</title>
+    <!-- Link to external CSS file -->
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body class = "extension_popup_body">
+    <div class="left-column">
+        <!-- Left hand side of extension popup -->
+        <h1>Save Tabs URLs</h1>
+        <p>Save URLs will download a JSON file with all open URLs. <br> Click "Advanced or Load" to get more control or to load saved URLs.</p>
+        <button id="save-tabs">Save URLs</button>
+        <button id="load-tabs">Advanced or Load</button>
+    </div>
+    <div class="right-column">
+        <!-- RIght hand side of extension popup with icon and links -->
+        <a href="https://addons.mozilla.org/en-US/firefox/addon/save-tabs-to-json/" target="_blank">
+            <img src="icons/icon128.png" alt="Icon" class="icon">
+        </a>
+    </div>
+    <script src="popup.js"></script>
+</body>
+</html>
