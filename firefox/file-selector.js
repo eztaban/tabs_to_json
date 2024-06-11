@@ -37,7 +37,12 @@ async function processFileContent(fileContent) {
         for (const [windowId, urls] of Object.entries(windowsData)) {
             const createdWindow = await browser.windows.create(); // Create a new window
             for (const url of urls) {
-                await browser.tabs.create({ windowId: createdWindow.id, url, active: false });
+                try{
+                    await browser.tabs.create({ windowId: createdWindow.id, url, active: false });
+                } catch (error) {
+                    // Will happen with illegal URLs
+                    console.error('Error opening URL: ', url)
+                }
             }
             const defaultTab = createdWindow.tabs[0];
             await browser.tabs.remove(defaultTab.id);
