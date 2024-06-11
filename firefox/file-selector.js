@@ -29,25 +29,28 @@ function handleFileSelection(event) {
 }
 
 async function processFileContent(fileContent) {
-    // This function will process the json file with URLs
+    // This function will process the JSON file with URLs
     try {
-        
-        const urls = extractUrlsFromJson(fileContent);
+        const windowsData = extractUrlsFromJson(fileContent);
 
-        // Open each URL in a separate tab
-        for (const url of urls) {
-            await browser.tabs.create({ url, active:false});
+        // Open each URL in a separate tab in its respective window
+        for (const [windowId, urls] of Object.entries(windowsData)) {
+            const createdWindow = await browser.windows.create(); // Create a new window
+            for (const url of urls) {
+                await browser.tabs.create({ windowId: createdWindow.id, url, active: false });
+            }
+            const defaultTab = createdWindow.tabs[0];
+            await browser.tabs.remove(defaultTab.id);
         }
 
-        console.log('Loaded and opened URLs:', urls);
-        // Notify me that URLs are loaded and close loader tab
-        alert("URLs succesfully loaded")
-        closeTabWithTitle("File Selector")
-        
+        console.log('Loaded and opened URLs from all windows:', windowsData);
+        // Notify that URLs are loaded and close loader tab
+        // alert("URLs successfully loaded");
+        closeTabWithTitle("File Selector");
 
     } catch (error) {
-        console.error('Error opening file selector:', error);
-        alert('Failed to open file selector:\n' + error.message);
+        console.error('Error processing file content:', error);
+        alert('Failed to process file content:\n' + error.message);
     }
 }
 
@@ -55,10 +58,18 @@ function extractUrlsFromJson(jsonContent) {
     // Parse JSON data
     try {
         const parsedData = JSON.parse(jsonContent);
-        if (Array.isArray(parsedData.urls)) {
-            return parsedData.urls.filter(url => typeof url === 'string');
+        if (typeof parsedData === 'object' && parsedData !== null) {
+            const windowsData = {};
+            for (const [windowId, urls] of Object.entries(parsedData)) {
+                if (Array.isArray(urls)) {
+                    windowsData[windowId] = urls.filter(url => typeof url === 'string');
+                } else {
+                    throw new Error(`Invalid JSON format: URLs array not found for window ${windowId}.`);
+                }
+            }
+            return windowsData;
         } else {
-            throw new Error('Invalid JSON format: URLs array not found.');
+            throw new Error('Invalid JSON format: Expected an object.');
         }
     } catch (error) {
         throw new Error('Error parsing JSON content: ' + error.message);
