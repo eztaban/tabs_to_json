@@ -27,9 +27,9 @@ chrome.runtime.onMessage.addListener(async (message) => {
 
         console.log('All URLs saved:', urls);
     }
-
     if (message.command === 'saveUrlsAdvanced') {
         let { filename, prefixOption, windowOption } = message;
+
         let urls = {};
 
         if (windowOption === "all-windows") {

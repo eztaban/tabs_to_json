@@ -17,7 +17,7 @@ function handleFileSelection(event) {
     }
 
     const reader = new FileReader();
-    reader.onload = function (event) {
+    reader.onload = function(event) {
         const fileContent = event.target.result;
         processFileContent(fileContent);
     };
@@ -29,7 +29,7 @@ async function processFileContent(fileContent) {
         const windowsData = extractUrlsFromJson(fileContent);
 
         for (const [windowId, urls] of Object.entries(windowsData)) {
-            const createdWindow = await chrome.windows.create();
+            const createdWindow = await chrome.windows.create(); 
             for (const url of urls) {
                 try {
                     await chrome.tabs.create({ windowId: createdWindow.id, url, active: false });
@@ -96,12 +96,7 @@ async function saveTabsAdvanced() {
         const filenameInput = document.getElementById('filename-input');
         const prefixOption = document.querySelector('input[name="prefix-option"]:checked').value;
         const windowOption = document.querySelector('input[name="window-option"]:checked').value;
-        chrome.runtime.sendMessage({
-            command: 'saveUrlsAdvanced',
-            filename: filenameInput.value,
-            prefixOption: prefixOption,
-            windowOption: windowOption
-        });
+        chrome.runtime.sendMessage({ command: 'saveUrlsAdvanced', filename: filenameInput.value, prefixOption: prefixOption, windowOption: windowOption });
     } catch (error) {
         console.error('Error saving URLs:', error);
         alert('Failed to save URLs:\n' + error.message);

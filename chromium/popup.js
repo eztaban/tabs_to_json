@@ -8,18 +8,16 @@ document.addEventListener('DOMContentLoaded', function () {
     saveTabsSimpleButton.addEventListener('click', saveTabs);
 });
 
-async function openFileSelector() {
+function openFileSelector() {
     try {
-        // Open the file selector page in a new tab
         chrome.tabs.create({ url: chrome.runtime.getURL('file-selector.html') });
     } catch (error) {
         console.error('Error opening file selector page:', error);
     }
 }
 
-async function saveTabs() {
+function saveTabs() {
     try {
-        // Send a message to the background script
         chrome.runtime.sendMessage({ command: 'saveUrls' });
     } catch (error) {
         console.error('Error saving URLs:', error);
