@@ -13,7 +13,7 @@ function getTimestamp() {
 
 
 browser.runtime.onMessage.addListener(async (message) => {
-    const standard_filename = "_save-tabs"
+    const standard_filename = "save-tabs"
     
     // Listens for message and checks the content of the message to see what to do
     if (message.command === 'saveUrls') {
@@ -32,7 +32,7 @@ browser.runtime.onMessage.addListener(async (message) => {
         const url = URL.createObjectURL(blob);
         const timestamp = getTimestamp();
         alert(timestamp)
-        browser.downloads.download({ url, filename: `${timestamp}${standard_filename}.json`});
+        browser.downloads.download({ url, filename: `${timestamp}_${standard_filename}.json`});
         alert("u")
 
         console.log('All URLs saved:', urls);
