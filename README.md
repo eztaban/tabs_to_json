@@ -36,10 +36,31 @@ Pressing *Save URLs* will immediately download a JSON file with the URLs of all 
 
 ### Advanced mode and loading URLs
 
+Advanced mode supports multiple windows in both loading and saving tabs. The JSON structure is the same, but can hold multiple keys:  
+This example will open two windows. One will have 6 tabs, while the other will have 2.
+```JSON
+{
+  "windowID1": [
+    "https://search.brave.com/",
+    "https://www.google.com/",
+    "https://www.ecosia.org/?c=en",
+    "https://www.startpage.com/en/",
+    "https://www.wikipedia.org/",
+    "https://en.wikipedia.org/wiki/Randomness",
+
+  ],
+  "windowID2": [
+    "https://www.wikipedia.org/",
+    "https://en.wikipedia.org/wiki/Randomness",
+
+  ]
+}
+```
+
 #### Loading
 To load URLs that were previously saved with the extension or otherwise, if they follow the same format, select the advanced mode in the popup.  
 Then select load JSON. This will open the system file dialog and ask the user to select a file.  
-All the URLs in the JSON file will be opened in the same window, but with a tab each.
+The extension will open a new window per key in the JSON file and open the URLs accordingly.
 
 #### Advanced saving
 On this page, it is still possible to do the simple save, which functions as described above.
