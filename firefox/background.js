@@ -39,55 +39,55 @@ browser.runtime.onMessage.addListener(async (message) => {
     }
     if (message.command === 'saveUrlsAdvanced') {
         // With advanced, we utilize the content of the message
-
+    
         // Get the filename and prefixOption from the message
-        let { filename, prefixOption, windowOption} = message;
-
-        
-        let urls = [];
-
-        // save from all windows
+        let { filename, prefixOption, windowOption } = message;
+    
+        let urls = {};
+    
+        // Save from all windows
         if (windowOption === "all-windows") {
-            const allTabs = await browser.tabs.query({});
-            urls = allTabs.map(tab => tab.url);
+            const allWindows = await browser.windows.getAll({ populate: true });
+            allWindows.forEach(window => {
+                urls[window.id] = window.tabs.map(tab => tab.url);
+            });
         } else {
-            // only retrieve tabs from current window
-            const currentWindow = await browser.windows.getCurrent();
-            const currentTabs = await browser.tabs.query({ windowId: currentWindow.id });
-            urls = currentTabs.map(tab => tab.url);
+            // Only retrieve tabs from current window
+            const currentWindow = await browser.windows.getCurrent({ populate: true });
+            urls[currentWindow.id] = currentWindow.tabs.map(tab => tab.url);
         }
-        
+    
         // Filter out URLs containing specific strings
-        urls = urls.filter(url => !url.includes('file-selector.html') && !url.includes('moz-extension'));
-
+        for (let windowId in urls) {
+            urls[windowId] = urls[windowId].filter(url => !url.includes('file-selector.html') && !url.includes('moz-extension'));
+        }
+    
         // Create a JSON object with the URLs
-        const jsonContent = JSON.stringify({ urls }, null, 2);
-
-        
-
+        const jsonContent = JSON.stringify(urls, null, 2);
+    
         // Handle no filename entered
         filename = filename.trim(); // Remove whitespace from both sides of the string
         if (filename === '') {
             // The input field is empty
-            filename = standard_filename;
+            filename = standard_filename; // You should define standard_filename somewhere in your script
             console.log('No filename entered. Using standard filename');
         } else {
             // The input field has some value
             console.log('Filename entered:', filename);
         }
-
+    
         // Construct the filename based on the prefixOption and user input as well as file ending
         let finalFilename = `${filename}.json`;
         if (prefixOption === 'with-prefix') {
             const timestamp = getTimestamp();
             finalFilename = `${timestamp}_${filename}.json`;
         }
-
+    
         // Prompt the user to download the JSON file
         const blob = new Blob([jsonContent], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         browser.downloads.download({ url, filename: finalFilename });
-
+    
         console.log('All URLs saved:', urls);
     }
 });
