@@ -27,21 +27,21 @@ function handleFileSelection(event) {
     };
     reader.readAsText(file);
 }
-
 async function processFileContent(fileContent) {
     // This function will process the JSON file with URLs
     try {
         const windowsData = extractUrlsFromJson(fileContent);
 
         // Open each URL in a separate tab in its respective window
-        for (const [windowId, urls] of Object.entries(windowsData)) {
-            const createdWindow = await browser.windows.create(); // Create a new window
-            for (const url of urls) {
-                try{
+        for (const [windowId, windowData] of Object.entries(windowsData)) {
+            const windowMode = windowData.windowMode === 'private';
+            const createdWindow = await browser.windows.create({ incognito: windowMode }); // Create a new window with the specified mode
+            for (const url of windowData.urls) {
+                try {
                     await browser.tabs.create({ windowId: createdWindow.id, url, active: false });
                 } catch (error) {
                     // Will happen with illegal URLs
-                    console.error('Error opening URL: ', url)
+                    console.error('Error opening URL: ', url);
                 }
             }
             const defaultTab = createdWindow.tabs[0];
@@ -50,7 +50,6 @@ async function processFileContent(fileContent) {
 
         console.log('Loaded and opened URLs from all windows:', windowsData);
         // Notify that URLs are loaded and close loader tab
-        // alert("URLs successfully loaded");
         closeTabWithTitle("File Selector");
 
     } catch (error) {
@@ -62,24 +61,40 @@ async function processFileContent(fileContent) {
 function extractUrlsFromJson(jsonContent) {
     // Parse JSON data
     try {
+        // Try to parse the JSON content
         const parsedData = JSON.parse(jsonContent);
+
+        // Check if the parsed data is an object and not null
         if (typeof parsedData === 'object' && parsedData !== null) {
-            const windowsData = {};
-            for (const [windowId, urls] of Object.entries(parsedData)) {
-                if (Array.isArray(urls)) {
-                    windowsData[windowId] = urls.filter(url => typeof url === 'string');
+            const windowsData = {}; // Initialize an empty object to store the window data
+
+            // Iterate over each entry in the parsed data object
+            for (const [windowId, windowData] of Object.entries(parsedData)) {
+
+                // Check if windowData is an object, not null, and contains an array of URLs
+                if (typeof windowData === 'object' && windowData !== null && Array.isArray(windowData.urls)) {
+                    // Store the windowMode and filter the URLs to ensure they are strings
+                    windowsData[windowId] = {
+                        windowMode: windowData.windowMode, // Preserve the windowMode (private or public)
+                        urls: windowData.urls.filter(url => typeof url === 'string') // Ensure URLs are strings
+                    };
                 } else {
-                    throw new Error(`Invalid JSON format: URLs array not found for window ${windowId}.`);
+                    // Throw an error if the expected structure is not found
+                    throw new Error(`Invalid JSON format: Expected object with windowMode and URLs array for window ${windowId}.`);
                 }
             }
+            // Return the structured window data
             return windowsData;
         } else {
+            // Throw an error if the parsed data is not an object
             throw new Error('Invalid JSON format: Expected an object.');
         }
     } catch (error) {
+        // Throw an error if JSON parsing fails
         throw new Error('Error parsing JSON content: ' + error.message);
     }
 }
+
 
 
 async function closeTabWithTitle(title) {
