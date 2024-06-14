@@ -12,83 +12,88 @@ function getTimestamp() {
 }
 
 
+// Helper function to filter URLs from tabs
+function filterUrls(tabs) {
+    return tabs.map(tab => tab.url) // Map tabs to their URLs
+               .filter(url => !url.includes('file-selector.html') && !url.includes('moz-extension')); // Filter out unwanted URLs
+}
+
+// Helper function to construct JSON content from window data
+function constructJsonContent(windowData) {
+    const jsonData = {}; // Initialize JSON data object
+    windowData.forEach(window => {
+        jsonData[window.id] = {
+            windowMode: window.incognito ? "private" : "public", // Determine window mode
+            urls: filterUrls(window.tabs) // Get filtered URLs
+        };
+    });
+    return JSON.stringify(jsonData, null, 2); // Convert object to JSON string with indentation
+}
+
+// Helper function to prompt download of JSON file
+function promptDownload(jsonContent, filename) {
+    const blob = new Blob([jsonContent], { type: 'application/json' }); // Create a Blob from JSON content
+    const url = URL.createObjectURL(blob); // Create an object URL for the Blob
+    browser.downloads.download({ url, filename }); // Trigger download in browser
+}
+
+// Listener for messages sent to the background script
 browser.runtime.onMessage.addListener(async (message) => {
-    const standard_filename = "save-tabs"
-    
-    // Listens for message and checks the content of the message to see what to do
-    if (message.command === 'saveUrls') {
-        // Simple save URLs
-        const currentWindow = await browser.windows.getCurrent();
-        const currentTabs = await browser.tabs.query({ windowId: currentWindow.id });
-        urls = currentTabs.map(tab => tab.url);
+    const standardFilename = "save-tabs"; // Default filename
 
-        urls = urls.filter(url => !url.includes('file-selector.html') && !url.includes('moz-extension'));
+    try {
+        let windowData;
+        let finalFilename = standardFilename;
 
-        // Create a JSON object with the URLs
-        const jsonContent = JSON.stringify({ urls }, null, 2);
-
-        // Prompt the user to download the JSON file
-        const blob = new Blob([jsonContent], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const timestamp = getTimestamp();
-        alert(timestamp)
-        browser.downloads.download({ url, filename: `${timestamp}_${standard_filename}.json`});
-        alert("u")
-
-        console.log('All URLs saved:', urls);
-    }
-    if (message.command === 'saveUrlsAdvanced') {
-        // With advanced, we utilize the content of the message
-    
-        // Get the filename and prefixOption from the message
-        let { filename, prefixOption, windowOption } = message;
-    
-        let urls = {};
-    
-        // Save from all windows
-        if (windowOption === "all-windows") {
-            const allWindows = await browser.windows.getAll({ populate: true });
-            allWindows.forEach(window => {
-                urls[window.id] = window.tabs.map(tab => tab.url);
-            });
-        } else {
-            // Only retrieve tabs from current window
+        // Get window data based on the command in the message
+        if (message.command === 'saveUrls') {
+            // Get the current window and its tabs
             const currentWindow = await browser.windows.getCurrent({ populate: true });
-            urls[currentWindow.id] = currentWindow.tabs.map(tab => tab.url);
-        }
-    
-        // Filter out URLs containing specific strings
-        for (let windowId in urls) {
-            urls[windowId] = urls[windowId].filter(url => !url.includes('file-selector.html') && !url.includes('moz-extension'));
-        }
-    
-        // Create a JSON object with the URLs
-        const jsonContent = JSON.stringify(urls, null, 2);
-    
-        // Handle no filename entered
-        filename = filename.trim(); // Remove whitespace from both sides of the string
-        if (filename === '') {
-            // The input field is empty
-            filename = standard_filename; // You should define standard_filename somewhere in your script
-            console.log('No filename entered. Using standard filename');
+            windowData = [currentWindow]; // Wrap single window data in an array
+
+
+
+        } else if (message.command === 'saveUrlsAdvanced') {
+            const { filename, prefixOption, windowOption } = message; // Destructure advanced options from message
+
+            // Handle filename input
+            if (filename.trim() !== '') {
+                finalFilename = filename.trim(); // Use provided filename if not empty
+            } else {
+                console.log('No filename entered. Using standard filename');
+            }
+
+
+            // Get window data based on windowOption
+            if (windowOption === "all-windows") {
+                windowData = await browser.windows.getAll({ populate: true }); // Get all windows with their tabs
+            } else {
+                const currentWindow = await browser.windows.getCurrent({ populate: true });
+                windowData = [currentWindow]; // Wrap single window data in an array
+            }
+
+
+            // Add prefix to filename if required
+            if (prefixOption === 'with-prefix') {
+                const timestamp = getTimestamp(); // Generate timestamp
+                finalFilename = `${timestamp}_${finalFilename}`; // Prefix filename with timestamp
+            }
         } else {
-            // The input field has some value
-            console.log('Filename entered:', filename);
+            throw new Error('Unknown command'); // Throw error if command is unrecognized
         }
-    
-        // Construct the filename based on the prefixOption and user input as well as file ending
-        let finalFilename = `${filename}.json`;
-        if (prefixOption === 'with-prefix') {
-            const timestamp = getTimestamp();
-            finalFilename = `${timestamp}_${filename}.json`;
+
+        // Construct JSON content from window data
+        const jsonContent = constructJsonContent(windowData);
+        // Prompt download of JSON file
+        if (message.command === 'saveUrls'){
+            finalFilename = `${getTimestamp()}_${finalFilename}`
         }
-    
-        // Prompt the user to download the JSON file
-        const blob = new Blob([jsonContent], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        browser.downloads.download({ url, filename: finalFilename });
-    
-        console.log('All URLs saved:', urls);
+        promptDownload(jsonContent, `${finalFilename}.json`);
+
+        console.log('All URLs saved:', windowData); // Log saved URLs for debugging
+    } catch (error) {
+        console.error('Error saving URLs:', error); // Log error
+        alert('Failed to save URLs:\n' + error.message); // Alert user of failure
     }
 });
 
