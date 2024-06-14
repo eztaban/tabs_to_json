@@ -10,20 +10,22 @@ The browser can be installed from the [firefox extension store](https://addons.m
 ## Functionality
 
 This extension allows you to save your tabs from firefox to JSON.  
-The URLs of all the open tabs are save in a dictionary format where the key is `urls` and the value is a list of URLs.  
+The URLs of all the open tabs are save in a dictionary format. The structure consist of a key with the windowsID and a nested dictionary. The nested dictionary holds two key-value pairs. One specififying the window mode and one holding a list of urls.  
 
 An example can be seen below:
 ```JSON
 {
-  "urls": [
-    "https://search.brave.com/",
-    "https://www.google.com/",
-    "https://www.ecosia.org/?c=en",
-    "https://www.startpage.com/en/",
-    "https://www.wikipedia.org/",
-    "https://en.wikipedia.org/wiki/Randomness",
-
-  ]
+  "windowID": {
+    "windowMode": "public",
+    "urls" :[
+      "https://search.brave.com/",
+      "https://www.google.com/",
+      "https://www.ecosia.org/?c=en",
+      "https://www.startpage.com/en/",
+      "https://www.wikipedia.org/",
+      "https://en.wikipedia.org/wiki/Randomness"
+    ]
+  }
 }
 ```
 
@@ -37,23 +39,27 @@ Pressing *Save URLs* will immediately download a JSON file with the URLs of all 
 ### Advanced mode and loading URLs
 
 Advanced mode supports multiple windows in both loading and saving tabs. The JSON structure is the same, but can hold multiple keys:  
-This example will open two windows. One will have 6 tabs, while the other will have 2.
+This example will open two windows. One will have 6 tabs, while the other will have 2. The first window is normal, while the second one is private mode.
 ```JSON
 {
-  "windowID1": [
-    "https://search.brave.com/",
-    "https://www.google.com/",
-    "https://www.ecosia.org/?c=en",
-    "https://www.startpage.com/en/",
-    "https://www.wikipedia.org/",
-    "https://en.wikipedia.org/wiki/Randomness",
-
-  ],
-  "windowID2": [
-    "https://www.wikipedia.org/",
-    "https://en.wikipedia.org/wiki/Randomness",
-
-  ]
+  "windowID1": {
+    "windowMode": "public",
+    "urls" :[
+      "https://search.brave.com/",
+      "https://www.google.com/",
+      "https://www.ecosia.org/?c=en",
+      "https://www.startpage.com/en/",
+      "https://www.wikipedia.org/",
+      "https://en.wikipedia.org/wiki/Randomness"
+    ]
+  },
+  "windowID2": {
+    "windowMode": "public",
+    "urls" :[
+      "https://www.wikipedia.org/",
+      "https://en.wikipedia.org/wiki/Randomness"
+    ]
+  }
 }
 ```
 
