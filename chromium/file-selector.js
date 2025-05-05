@@ -24,63 +24,176 @@ function handleFileSelection(event) {
     reader.readAsText(file);
 }
 
-async function processFileContent(fileContent) {
-    try {
-        const windowsData = extractUrlsFromJson(fileContent);
+// window and tab functionality
 
-        for (const [windowId, urls] of Object.entries(windowsData)) {
-            const createdWindow = await chrome.windows.create(); 
-            for (const url of urls) {
-                try {
-                    await chrome.tabs.create({ windowId: createdWindow.id, url, active: false });
-                } catch (error) {
-                    console.error('Error opening URL: ', url);
-                }
-            }
-            const defaultTab = createdWindow.tabs[0];
-            await chrome.tabs.remove(defaultTab.id);
+function createWindow(options) {
+    return new Promise((resolve, reject) => {
+      chrome.windows.create(options, (window) => {
+        if (chrome.runtime.lastError) {
+          reject(chrome.runtime.lastError);
+        } else {
+          resolve(window);
         }
+      });
+    });
+  }
+  
+  function createTab(options) {
+    return new Promise((resolve, reject) => {
+      chrome.tabs.create(options, (tab) => {
+        if (chrome.runtime.lastError) {
+          reject(chrome.runtime.lastError);
+        } else {
+          resolve(tab);
+        }
+      });
+    });
+  }
+  
+  function getWindow(windowId) {
+    return new Promise((resolve, reject) => {
+      chrome.windows.get(windowId, { populate: true }, (window) => {
+        if (chrome.runtime.lastError) {
+          reject(chrome.runtime.lastError);
+        } else {
+          resolve(window);
+        }
+      });
+    });
+  }
+  
+  function removeTab(tabId) {
+    return new Promise((resolve, reject) => {
+      chrome.tabs.remove(tabId, () => {
+        if (chrome.runtime.lastError) {
+          reject(chrome.runtime.lastError);
+        } else {
+          resolve();
+        }
+      });
+    });
+  }
 
-        console.log('Loaded and opened URLs from all windows:', windowsData);
-        closeTabWithTitle("File Selector");
-
+  async function processFileContent(fileContent) {
+    try {
+      const windowsData = extractUrlsFromJson(fileContent);
+  
+      for (const windowObj of Object.values(windowsData)) {
+        const isPrivate = windowObj.windowMode === 'private';
+        const rawUrls = windowObj.urls;
+  
+        if (!Array.isArray(rawUrls)) {
+          console.warn(`Skipped group: missing 'urls' array.`);
+          continue;
+        }
+  
+        const urls = rawUrls.filter(url => {
+          try {
+            new URL(url);
+            return true;
+          } catch {
+            console.warn('Invalid URL skipped:', url);
+            return false;
+          }
+        });
+  
+        if (urls.length === 0) {
+          console.warn('Skipped group: no valid URLs.');
+          continue;
+        }
+  
+        console.log(`Opening ${isPrivate ? 'private' : 'public'} window with ${urls.length} tab(s):`, urls);
+  
+        let createdWindow;
+        try {
+          createdWindow = await createWindow({
+            url: 'https://example.com',
+            incognito: isPrivate
+          });
+          console.log('Created window ID:', createdWindow.id);
+        } catch (error) {
+          console.error('Failed to create window:', error);
+          continue;
+        }
+  
+        for (const url of urls) {
+          try {
+            const tab = await createTab({
+              windowId: createdWindow.id,
+              url,
+              active: false
+            });
+            console.log(`Opened tab in window ${createdWindow.id}:`, tab.url);
+          } catch (error) {
+            console.error(`Failed to open tab for URL ${url}:`, error);
+          }
+        }
+  
+        try {
+          const windowWithTabs = await getWindow(createdWindow.id);
+          const firstTab = windowWithTabs.tabs?.[0];
+          if (firstTab?.id) {
+            await removeTab(firstTab.id);
+            console.log(`Removed initial tab ID ${firstTab.id}`);
+          }
+        } catch (error) {
+          console.warn(`Could not remove initial tab in window ${createdWindow.id}:`, error);
+        }
+      }
+  
+      console.log(' All windows and tabs loaded successfully.');
+      await closeTabWithTitle("File Selector");
+  
     } catch (error) {
-        console.error('Error processing file content:', error);
-        alert('Failed to process file content:\n' + error.message);
+      console.error(' Failed to process file content:', error);
+      alert('Failed to process file content:\n' + error.message);
     }
-}
+  }
+  
+
+
 
 function extractUrlsFromJson(jsonContent) {
     try {
-        const parsedData = JSON.parse(jsonContent);
-        if (typeof parsedData === 'object' && parsedData !== null) {
-            const windowsData = {};
-            for (const [windowId, urls] of Object.entries(parsedData)) {
-                if (Array.isArray(urls)) {
-                    windowsData[windowId] = urls.filter(url => typeof url === 'string');
-                } else {
-                    throw new Error(`Invalid JSON format: URLs array not found for window ${windowId}.`);
-                }
-            }
-            return windowsData;
+      const parsedData = JSON.parse(jsonContent);
+  
+      if (typeof parsedData !== 'object' || parsedData === null) {
+        throw new Error('Invalid JSON format: expected a top-level object.');
+      }
+  
+      for (const [windowId, windowObj] of Object.entries(parsedData)) {
+        if (
+          typeof windowObj !== 'object' ||
+          windowObj === null ||
+          !Array.isArray(windowObj.urls)
+        ) {
+          throw new Error(`Invalid JSON format: 'urls' array not found for window ${windowId}.`);
+        }
+      }
+  
+      return parsedData; // Return full untouched object
+    } catch (error) {
+      throw new Error('Error parsing JSON content: ' + error.message);
+    }
+  }
+  
+  async function closeTabWithTitle(title) {
+    try {
+        const allTabs = await chrome.tabs.query({}); // Get all tabs
+        const matchingTab = allTabs.find(tab => tab.title === title);
+
+        if (matchingTab && matchingTab.id) {
+            await chrome.tabs.remove(matchingTab.id);
+            console.log(`Closed tab with title: "${title}"`);
         } else {
-            throw new Error('Invalid JSON format: Expected an object.');
+            console.log(`No tab found with title: "${title}"`);
         }
     } catch (error) {
-        throw new Error('Error parsing JSON content: ' + error.message);
+        console.error('Failed to close tab by title:', error);
     }
 }
 
-async function closeTabWithTitle(title) {
-    const tabs = await chrome.tabs.query({ title: title });
-
-    if (tabs && tabs.length > 0) {
-        await chrome.tabs.remove(tabs[0].id);
-        console.log('Tab with title', title, 'closed successfully.');
-    } else {
-        console.log('No tabs with title', title, 'found.');
-    }
-}
+  
 
 async function saveTabs() {
     try {

@@ -3,9 +3,9 @@ document.addEventListener('DOMContentLoaded', function () {
     const openFileSelectorButton = document.getElementById('load-tabs');
     const saveTabsSimpleButton = document.getElementById('save-tabsSimple');
 
-    openFileSelectorButton.addEventListener('click', openFileSelector);
-    saveTabsButton.addEventListener('click', saveTabs);
-    saveTabsSimpleButton.addEventListener('click', saveTabs);
+    openFileSelectorButton?.addEventListener('click', openFileSelector);
+    saveTabsButton?.addEventListener('click', sendSaveTabsMessage);
+    saveTabsSimpleButton?.addEventListener('click', sendSaveTabsMessage);
 });
 
 function openFileSelector() {
@@ -16,11 +16,33 @@ function openFileSelector() {
     }
 }
 
-function saveTabs() {
+function sendMessage(message) {
+    return new Promise((resolve, reject) => {
+        chrome.runtime.sendMessage(message, (response) => {
+            if (chrome.runtime.lastError) {
+                reject(chrome.runtime.lastError);
+            } else {
+                resolve(response);
+            }
+        });
+    });
+}
+
+async function sendSaveTabsMessage() {
     try {
-        chrome.runtime.sendMessage({ command: 'saveUrls' });
+        await sendMessage({ command: 'saveUrls' });
+        console.log('✅ Message sent to background: saveUrls');
     } catch (error) {
-        console.error('Error saving URLs:', error);
+        console.error('❌ Error sending saveUrls message:', error);
         alert('Failed to save URLs:\n' + error.message);
     }
 }
+
+// function saveTabs() {
+//     try {
+//         chrome.runtime.sendMessage({ command: 'saveUrls' });
+//     } catch (error) {
+//         console.error('Error saving URLs:', error);
+//         alert('Failed to save URLs:\n' + error.message);
+//     }
+// }
